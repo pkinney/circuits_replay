@@ -1,6 +1,8 @@
-# Replay
+# Circuits.Replay
 
-**TODO: Add description**
+A testing library that can mock all of the [Circuits]{https://elixir-circuits.github.io/) libraries to 
+step through and assert a sequence of calls and messages.
+
 
 ## Installation
 
@@ -15,7 +17,48 @@ def deps do
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/replay>.
+## Usage
 
+To mock each of the Circuits libraries, this tool uses [Resolve](), an extremely lightweight mocking
+library.  Without your project, use Resolve's `resolve/1` function to determin the module to call:
+
+
+```elixit
+
+
+```
+
+### UART
+
+```elixir
+ defp uart(), do: Resolve.resolve(Circuits.UART)
+
+  test "Successful sequence" do
+    replay =
+      Replay.UART.replay([
+        {:write, "S0 T5"},
+        {:read, "ACK"},
+        {:write, "V34"},
+        {:write, "R5531"},
+        {:read, <<0xFF, 0xFF, 0xFE>>}
+      ])
+
+    {:ok, uart} = uart().start_link()
+    :ok = uart().open(uart, "ttyAMA0", active: false)
+    uart().write(uart, "S0 T5")
+    {:ok, "ACK"} = uart().read(uart)
+    uart().write(uart, "V34")
+    uart().write(uart, "R5531")
+    {:ok, <<0xFF, 0xFF, 0xFE>>} = uart().read(uart)
+
+    Replay.UART.assert_complete(replay)
+  end
+```
+
+### I2C
+
+### GPIO
+
+### SPI
+
+Not implemented yet
