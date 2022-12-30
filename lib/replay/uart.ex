@@ -25,26 +25,17 @@ defmodule Replay.UART do
 
         def write(_, data) do
           case step() do
-            {:write, ^data} ->
-              maybe_send_next()
-
-            nil ->
-              throw(
-                "[Out of Sequence] Replay is complete but received #{inspect({:write, data})}"
-              )
-
-            step ->
-              throw(
-                "[Out of Sequence] \n   - expected: #{inspect(step)} \n   - got: #{inspect({:write, data})}"
-              )
+            {:write, ^data} -> maybe_send_next()
+            nil -> throw(sequence_complete({:write, data}))
+            step -> throw(out_of_sequence({:write, data}, step))
           end
         end
 
         def read(_, _ \\ 5_000) do
           case step() do
             {:read, data} -> {:ok, data}
-            nil -> throw("[Out of Sequence] Replay is complete but received :read")
-            step -> throw("{:out_of_sequence, step, :read}")
+            nil -> throw(sequence_complete(:read))
+            step -> throw(out_of_sequence(:read, step))
           end
         end
 
@@ -52,11 +43,6 @@ defmodule Replay.UART do
           index = :ets.update_counter(:uart_replay, unquote(replay_id), {2, 1})
           unquote(sequence) |> Enum.at(index - 1)
         end
-
-        # defp peek() do
-        #   index = :ets.lookup_element(:uart_replay, unquote(replay_id), 2)
-        #   unquote(sequence) |> Enum.at(index)
-        # end
 
         defp maybe_send_next() do
           [{_, index, _, active, parent, name}] = :ets.lookup(:uart_replay, unquote(replay_id))
@@ -74,6 +60,14 @@ defmodule Replay.UART do
           else
             :ok
           end
+        end
+
+        defp out_of_sequence(actual, expected) do
+          "[Out of Sequence] \n   - expected: #{inspect(expected)} \n   - got: #{inspect(actual)}"
+        end
+
+        defp sequence_complete(actual) do
+          "[Out of Sequence] Replay is complete but received #{inspect(actual)}"
         end
       end
     )
