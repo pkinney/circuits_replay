@@ -1,11 +1,15 @@
 defmodule Replay.UART do
-  def replay(sequence) do
+  def setup() do
     if :ets.whereis(:uart_replay) == :undefined do
       :ets.new(:uart_replay, [:public, :set, :named_table, read_concurrency: true])
     end
+  end
 
+  def replay(sequence) do
     replay_id = make_ref() |> :erlang.ref_to_list()
     :ets.insert(:uart_replay, {replay_id, 0, sequence, true, nil, nil})
+
+    # TODO allow passing options and pid during replay
 
     Resolve.inject(
       Circuits.UART,
@@ -38,6 +42,8 @@ defmodule Replay.UART do
             step -> throw(out_of_sequence(:read, step))
           end
         end
+
+        def drain(_, _ \\ 5_000), do: :ok
 
         defp step() do
           index = :ets.update_counter(:uart_replay, unquote(replay_id), {2, 1})
