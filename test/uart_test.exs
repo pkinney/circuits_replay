@@ -103,6 +103,45 @@ defmodule Replay.UARTTest do
     assert catch_throw(Replay.UART.assert_complete(replay))
   end
 
+  test "await_complete should wait until the sequence is completed" do
+    replay =
+      Replay.UART.replay([
+        {:write, "S0 T5"},
+        {:read, "ACK"}
+      ])
+
+    {:ok, uart} = uart().start_link()
+    :ok = uart().open(uart, "ttyAMA0", active: false)
+    uart().write(uart, "S0 T5")
+
+    Task.async(fn ->
+      :timer.sleep(150)
+      uart().read(uart)
+    end)
+
+    Replay.UART.await_complete(replay)
+    Replay.UART.assert_complete(replay)
+  end
+
+  test "await_complete should throw if the sequence is not completed in time" do
+    replay =
+      Replay.UART.replay([
+        {:write, "S0 T5"},
+        {:read, "ACK"}
+      ])
+
+    {:ok, uart} = uart().start_link()
+    :ok = uart().open(uart, "ttyAMA0", active: false)
+    uart().write(uart, "S0 T5")
+
+    Task.async(fn ->
+      :timer.sleep(150)
+      uart().read(uart)
+    end)
+
+    assert catch_throw(Replay.UART.await_complete(replay, 50))
+  end
+
   test "active mode" do
     replay =
       Replay.UART.replay([
