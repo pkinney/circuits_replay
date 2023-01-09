@@ -28,19 +28,27 @@ defmodule Replay.UART do
         end
 
         def write(_, data) do
-          case step() do
-            {:write, ^data} -> maybe_send_next()
-            nil -> throw(sequence_complete({:write, data}))
-            step -> throw(out_of_sequence({:write, data}, step))
-          end
+          result =
+            case step() do
+              {:write, ^data} -> maybe_send_next()
+              nil -> throw(sequence_complete({:write, data}))
+              step -> throw(out_of_sequence({:write, data}, step))
+            end
+
+          mark_if_completed()
+          result
         end
 
         def read(_, _ \\ 5_000) do
-          case step() do
-            {:read, data} -> {:ok, data}
-            nil -> throw(sequence_complete(:read))
-            step -> throw(out_of_sequence(:read, step))
-          end
+          result =
+            case step() do
+              {:read, data} -> {:ok, data}
+              nil -> throw(sequence_complete(:read))
+              step -> throw(out_of_sequence(:read, step))
+            end
+
+          mark_if_completed()
+          result
         end
 
         def drain(_, _ \\ 5_000), do: :ok
@@ -59,6 +67,7 @@ defmodule Replay.UART do
                 :ets.update_counter(:uart_replay, unquote(replay_id), {2, 1})
                 send(parent, {:circuits_uart, name, message})
                 maybe_send_next()
+                mark_if_completed()
 
               _ ->
                 :ok
@@ -68,12 +77,22 @@ defmodule Replay.UART do
           end
         end
 
+        defp mark_if_completed() do
+          case :ets.lookup(:uart_replay, unquote(replay_id)) do
+            [{_, index, sequence, _, _, _}] when index >= length(sequence) ->
+              :ets.insert(:uart_replay, {unquote(replay_id), index, :complete})
+
+            _ ->
+              :ok
+          end
+        end
+
         defp out_of_sequence(actual, expected) do
-          "[Out of Sequence] \n   - expected: #{inspect(expected)} \n   - got: #{inspect(actual)}"
+          "[Out of Sequence] \n   - expected: #{inspect(expected, base: :hex)} \n   - got: #{inspect(actual, base: :hex)}"
         end
 
         defp sequence_complete(actual) do
-          "[Out of Sequence] Replay is complete but received #{inspect(actual)}"
+          "[Out of Sequence] Replay is complete but received #{inspect(actual, base: :hex)}"
         end
       end
     )
@@ -83,16 +102,47 @@ defmodule Replay.UART do
 
   def assert_complete(replay_id) do
     case :ets.lookup(:uart_replay, replay_id) do
-      [{_, index, sequence, _, _, _}] when index >= length(sequence) ->
+      [{_, _, :complete}] ->
         :ok
 
       [{_, index, sequence, _, _, _}] ->
         remaining = sequence |> Enum.drop(index)
-        remaining_str = remaining |> Enum.map(&"  - #{inspect(&1)}") |> Enum.join("\n")
+
+        remaining_str =
+          remaining |> Enum.map(&"  - #{inspect(&1, base: :hex)}") |> Enum.join("\n")
+
         throw("[Sequence Incomplete] #{length(remaining)} steps remaining: \n#{remaining_str}")
 
       _ ->
         throw("Replay not found")
+    end
+  end
+
+  def await_complete(replay_id, timeout \\ 5_000)
+
+  def await_complete(replay_id, timeout) when timeout < 0 do
+    case :ets.lookup(:uart_replay, replay_id) do
+      [{_, index, sequence, _, _, _}] ->
+        remaining = sequence |> Enum.drop(index)
+
+        remaining_str =
+          remaining |> Enum.map(&"  - #{inspect(&1, base: :hex)}") |> Enum.join("\n")
+
+        throw("[Sequence Incomplete] #{length(remaining)} steps remaining: \n#{remaining_str}")
+
+      [{_, _, :complete}] ->
+        :ok
+    end
+  end
+
+  def await_complete(replay_id, timeout) do
+    case :ets.lookup(:uart_replay, replay_id) do
+      [{_, _, :complete}] ->
+        :ok
+
+      _ ->
+        :timer.sleep(10)
+        await_complete(replay_id, timeout - 10)
     end
   end
 end

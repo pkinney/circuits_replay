@@ -3,6 +3,11 @@ defmodule Replay.UARTTest do
 
   defp uart(), do: Resolve.resolve(Circuits.UART)
 
+  setup do
+    Replay.UART.setup()
+    :ok
+  end
+
   test "Successful sequence" do
     replay =
       Replay.UART.replay([
