@@ -23,8 +23,7 @@ To mock each of the Circuits libraries, this tool uses [Resolve](), an extremely
 library.  Without your project, use Resolve's `resolve/1` function to determin the module to call:
 
 
-```elixit
-
+```elixir
 
 ```
 

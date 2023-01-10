@@ -1,5 +1,5 @@
 defmodule Replay.I2CTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   defp i2c(), do: Resolve.resolve(Circuits.I2C)
 
@@ -113,53 +113,58 @@ defmodule Replay.I2CTest do
     assert catch_throw(i2c().write_read(i2c, 0x10, "33", 2))
   end
 
-  # test "failed replay completion" do
-  #   replay =
-  #     Replay.I2C.replay([
-  #       {:write, "S0 T5"},
-  #       {:read, "ACK"}
-  #     ])
-  #
-  #   {:ok, i2c} = i2c().open("i2c-1")
-  #   i2c().write(i2c, "S0 T5")
-  #
-  #   assert catch_throw(Replay.I2C.assert_complete(replay))
-  # end
-  #
-  # test "await_complete should wait until the sequence is completed" do
-  #   replay =
-  #     Replay.I2C.replay([
-  #       {:write, "S0 T5"},
-  #       {:read, "ACK"}
-  #     ])
-  #
-  #   {:ok, i2c} = i2c().open("i2c-1")
-  #   i2c().write(i2c, "S0 T5")
-  #
-  #   Task.async(fn ->
-  #     :timer.sleep(150)
-  #     i2c().read(i2c)
-  #   end)
-  #
-  #   Replay.I2C.await_complete(replay)
-  #   Replay.I2C.assert_complete(replay)
-  # end
-  #
-  # test "await_complete should throw if the sequence is not completed in time" do
-  #   replay =
-  #     Replay.I2C.replay([
-  #       {:write, "S0 T5"},
-  #       {:read, "ACK"}
-  #     ])
-  #
-  #   {:ok, i2c} = i2c().open("i2c-1")
-  #   i2c().write(i2c, "S0 T5")
-  #
-  #   Task.async(fn ->
-  #     :timer.sleep(150)
-  #     i2c().read(i2c)
-  #   end)
-  #
-  #   assert catch_throw(Replay.I2C.await_complete(replay, 50))
-  # end
+  test "failed replay completion" do
+    replay =
+      Replay.I2C.replay([
+        {:write, 0x63, "S0"},
+        {:read, 0x10, "ACK"},
+        {:write_read, 0x10, "A8", "00"}
+      ])
+
+    {:ok, i2c} = i2c().open("i2c-1")
+    i2c().write(i2c, 0x63, "S0")
+
+    assert catch_throw(Replay.I2C.assert_complete(replay))
+  end
+
+  test "await_complete should wait until the sequence is completed" do
+    replay =
+      Replay.I2C.replay([
+        {:write, 0x63, "S0"},
+        {:read, 0x10, "ACK"},
+        {:write_read, 0x10, "A8", "00"}
+      ])
+
+    {:ok, i2c} = i2c().open("i2c-1")
+    i2c().write(i2c, 0x63, "S0")
+    i2c().read(i2c, 0x10, 3)
+
+    Task.async(fn ->
+      :timer.sleep(150)
+      {:ok, "00"} = i2c().write_read(i2c, 0x10, "A8", 2)
+    end)
+
+    Replay.I2C.await_complete(replay)
+    Replay.I2C.assert_complete(replay)
+  end
+
+  test "await_complete should throw if the sequence is not completed in time" do
+    replay =
+      Replay.I2C.replay([
+        {:write, 0x63, "S0"},
+        {:read, 0x10, "ACK"},
+        {:write_read, 0x10, "A8", "00"}
+      ])
+
+    {:ok, i2c} = i2c().open("i2c-1")
+    i2c().write(i2c, 0x63, "S0")
+    i2c().read(i2c, 0x10, 3)
+
+    Task.async(fn ->
+      :timer.sleep(150)
+      {:ok, "00"} = i2c().write_read(i2c, 0x10, "A8", 2)
+    end)
+
+    assert catch_throw(Replay.I2C.await_complete(replay, 50))
+  end
 end
