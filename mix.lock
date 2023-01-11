@@ -1,3 +1,4 @@
 %{
+  "mimic": {:hex, :mimic, "1.7.4", "cd2772ffbc9edefe964bc668bfd4059487fa639a5b7f1cbdf4fd22946505aa4f", [:mix], [], "hexpm", "437c61041ecf8a7fae35763ce89859e4973bb0666e6ce76d75efc789204447c3"},
   "resolve": {:hex, :resolve, "0.1.0", "4529d9b8d9508a71c4a163f7dee72d5028234cfa11d7ad0cff7ed43aef17758e", [:mix], [], "hexpm", "f8a453cef34282148e9b6583ec0207b574d4faa609ba713cebe25e108cf21aa9"},
 }

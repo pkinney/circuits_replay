@@ -20,11 +20,10 @@ end
 ## Usage
 
 To mock each of the Circuits libraries, this tool uses [Resolve](), an extremely lightweight mocking
-library.  Without your project, use Resolve's `resolve/1` function to determin the module to call:
-
+library.  Without your project, use Resolve's `resolve/1` function to determine the module to call:
 
 ```elixir
-
+  
 ```
 
 ### UART

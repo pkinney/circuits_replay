@@ -4,7 +4,7 @@ defmodule Replay.I2CTest do
   defp i2c(), do: Resolve.resolve(Circuits.I2C)
 
   setup do
-    Replay.I2C.setup()
+    Replay.I2C.setup(:resolve)
     :ok
   end
 

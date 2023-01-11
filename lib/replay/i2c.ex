@@ -1,19 +1,35 @@
 defmodule Replay.I2C do
-  def setup() do
+  def setup(mock) do
     if :ets.whereis(:i2c_replay) == :undefined do
       :ets.new(:i2c_replay, [:public, :set, :named_table, read_concurrency: true])
+    end
+
+    :ets.insert(:i2c_replay, {:mock, mock})
+
+    case mock do
+      :mimic ->
+        IO.puts("Setting up Mimic mock backend...")
+        Mimic.copy(Circuits.I2C)
+
+      :resolve ->
+        :ok
+
+      _ ->
+        throw("Unknown mock back-end: #{mock}")
     end
   end
 
   def replay(sequence, opts \\ []) do
+    Mimic.set_mimic_global()
+    mock = :ets.lookup_element(:i2c_replay, :mock, 2)
     devices = Keyword.get(opts, :devices, devices_from_sequence(sequence))
     bus_names = Keyword.get(opts, :busses, ["i2c-1"])
 
-    replay_id = make_ref() |> :erlang.ref_to_list()
+    replay_id = System.unique_integer([:positive])
+    i2c_ref = make_ref() |> :erlang.ref_to_list()
     :ets.insert(:i2c_replay, {replay_id, 0, sequence, :running})
 
-    Resolve.inject(
-      Circuits.I2C,
+    macro =
       quote do
         def bus_names(), do: unquote(bus_names)
         def detect_devices(), do: unquote(devices)
@@ -21,7 +37,7 @@ defmodule Replay.I2C do
         def device_present?(_i2c, address), do: detect_devices() |> Enum.member?(address)
 
         def open(bus_name) do
-          {:ok, :erlang.list_to_ref(unquote(replay_id))}
+          {:ok, unquote(i2c_ref) |> :erlang.list_to_ref()}
         end
 
         def read(_, address, bytes_to_read, _opts \\ []) do
@@ -35,6 +51,7 @@ defmodule Replay.I2C do
 
         def read!(i2c_bus, address, bytes_to_read, opts \\ []) do
           {:ok, resp} = read(i2c_bus, address, bytes_to_read, opts)
+          resp
         end
 
         def write(_, address, data, _opts \\ []) do
@@ -61,6 +78,7 @@ defmodule Replay.I2C do
 
         def write_read!(i2c_bus, address, write_data, bytes_to_read, opts \\ []) do
           {:ok, resp} = write_read(i2c_bus, address, write_data, bytes_to_read, opts)
+          resp
         end
 
         defp step() do
@@ -89,7 +107,14 @@ defmodule Replay.I2C do
           "[Out of Sequence] Replay is complete but received #{inspect(actual)}"
         end
       end
-    )
+
+    {:module, injected_module, _, _} =
+      Module.create(:"Replay#{replay_id}", macro, Macro.Env.location(__ENV__))
+
+    case mock do
+      :resolve -> Resolve.inject(Circuits.I2C, injected_module)
+      :mimic -> Mimic.stub_with(Circuits.I2C, injected_module)
+    end
 
     replay_id
   end
