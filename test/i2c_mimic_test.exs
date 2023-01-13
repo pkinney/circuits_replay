@@ -1,16 +1,16 @@
-defmodule Replay.I2CTest do
+defmodule ReplayTest do
   use ExUnit.Case
 
   defp i2c(), do: Resolve.resolve(Circuits.I2C)
 
   setup do
-    Replay.I2C.setup(:resolve)
+    Replay.setup_i2c(:mimic)
     :ok
   end
 
   test "Successful sequence" do
     replay =
-      Replay.I2C.replay([
+      Replay.replay_i2c([
         {:write, 0x47, "ABC"},
         {:read, 0x47, <<0xFF, 0xFF, 0xFE>>},
         {:write_read, 0x44, "XYZ0", "123"},
@@ -23,12 +23,12 @@ defmodule Replay.I2CTest do
     assert {:ok, "123"} == i2c().write_read(pid, 0x44, "XYZ0", 3)
     assert :ok = i2c().write!(pid, 0x49, "ACK")
 
-    Replay.I2C.assert_complete(replay)
+    Replay.assert_complete(replay)
   end
 
   test "out of sequence write" do
     _replay =
-      Replay.I2C.replay([
+      Replay.replay_i2c([
         {:write, 0x47, <<0x01, 0x02>>},
         {:read, 0x55, "A"}
       ])
@@ -41,7 +41,7 @@ defmodule Replay.I2CTest do
 
   test "out of sequence read" do
     _replay =
-      Replay.I2C.replay([
+      Replay.replay_i2c([
         {:write, 0x63, "S0"},
         {:read, 0x10, "ACK"},
         {:write, "A38"}
@@ -55,7 +55,7 @@ defmodule Replay.I2CTest do
   end
 
   test "out of sequence write_read" do
-    Replay.I2C.replay([
+    Replay.replay_i2c([
       {:write, 0x63, "S0"},
       {:read, 0x10, "ACK"},
       {:write_read, 0x10, "A8", 2}
@@ -69,7 +69,7 @@ defmodule Replay.I2CTest do
   end
 
   test "write after complete" do
-    Replay.I2C.replay([
+    Replay.replay_i2c([
       {:write, 0x63, "S0"},
       {:read, 0x10, "ACK"},
       {:write_read, 0x10, "A8", "00"}
@@ -84,7 +84,7 @@ defmodule Replay.I2CTest do
   end
 
   test "read after complete" do
-    Replay.I2C.replay([
+    Replay.replay_i2c([
       {:write, 0x63, "S0"},
       {:read, 0x10, "ACK"},
       {:write_read, 0x10, "A8", "00"}
@@ -99,7 +99,7 @@ defmodule Replay.I2CTest do
   end
 
   test "write_read after complete" do
-    Replay.I2C.replay([
+    Replay.replay_i2c([
       {:write, 0x63, "S0"},
       {:read, 0x10, "ACK"},
       {:write_read, 0x10, "A8", "00"}
@@ -115,7 +115,7 @@ defmodule Replay.I2CTest do
 
   test "failed replay completion" do
     replay =
-      Replay.I2C.replay([
+      Replay.replay_i2c([
         {:write, 0x63, "S0"},
         {:read, 0x10, "ACK"},
         {:write_read, 0x10, "A8", "00"}
@@ -124,12 +124,12 @@ defmodule Replay.I2CTest do
     {:ok, i2c} = i2c().open("i2c-1")
     i2c().write(i2c, 0x63, "S0")
 
-    assert catch_throw(Replay.I2C.assert_complete(replay))
+    assert catch_throw(Replay.assert_complete(replay))
   end
 
   test "await_complete should wait until the sequence is completed" do
     replay =
-      Replay.I2C.replay([
+      Replay.replay_i2c([
         {:write, 0x63, "S0"},
         {:read, 0x10, "ACK"},
         {:write_read, 0x10, "A8", "00"}
@@ -144,13 +144,13 @@ defmodule Replay.I2CTest do
       {:ok, "00"} = i2c().write_read(i2c, 0x10, "A8", 2)
     end)
 
-    Replay.I2C.await_complete(replay)
-    Replay.I2C.assert_complete(replay)
+    Replay.await_complete(replay)
+    Replay.assert_complete(replay)
   end
 
   test "await_complete should throw if the sequence is not completed in time" do
     replay =
-      Replay.I2C.replay([
+      Replay.replay_i2c([
         {:write, 0x63, "S0"},
         {:read, 0x10, "ACK"},
         {:write_read, 0x10, "A8", "00"}
@@ -165,6 +165,6 @@ defmodule Replay.I2CTest do
       {:ok, "00"} = i2c().write_read(i2c, 0x10, "A8", 2)
     end)
 
-    assert catch_throw(Replay.I2C.await_complete(replay, 50))
+    assert catch_throw(Replay.await_complete(replay, 50))
   end
 end

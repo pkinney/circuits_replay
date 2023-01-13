@@ -1,4 +1,7 @@
 %{
+  "circuits_i2c": {:hex, :circuits_i2c, "1.1.0", "a6ac3a9ae4f7f7f92a5242652008e1646da22adef0587d230a621501f935ba46", [:make, :mix], [{:elixir_make, "~> 0.6", [hex: :elixir_make, repo: "hexpm", optional: false]}], "hexpm", "39fee480cebc6fbd90abb4b82c15cf4a95e45ea741369886bd903ce9ab6eb60c"},
+  "circuits_uart": {:hex, :circuits_uart, "1.5.1", "c28f0144db799a8dbe84e1a05a58808450dd13a48b4e8ed92aa0a785ccfbbb1d", [:mix], [{:elixir_make, "~> 0.6", [hex: :elixir_make, repo: "hexpm", optional: false]}], "hexpm", "e0690f814e39c0e7cc742ccd1421d5489f6a7627477ff64c1dbaf7520c1b5600"},
+  "elixir_make": {:hex, :elixir_make, "0.7.3", "c37fdae1b52d2cc51069713a58c2314877c1ad40800a57efb213f77b078a460d", [:mix], [{:castore, "~> 0.1", [hex: :castore, repo: "hexpm", optional: true]}], "hexpm", "24ada3e3996adbed1fa024ca14995ef2ba3d0d17b678b0f3f2b1f66e6ce2b274"},
   "mimic": {:hex, :mimic, "1.7.4", "cd2772ffbc9edefe964bc668bfd4059487fa639a5b7f1cbdf4fd22946505aa4f", [:mix], [], "hexpm", "437c61041ecf8a7fae35763ce89859e4973bb0666e6ce76d75efc789204447c3"},
   "resolve": {:hex, :resolve, "0.1.0", "4529d9b8d9508a71c4a163f7dee72d5028234cfa11d7ad0cff7ed43aef17758e", [:mix], [], "hexpm", "f8a453cef34282148e9b6583ec0207b574d4faa609ba713cebe25e108cf21aa9"},
 }

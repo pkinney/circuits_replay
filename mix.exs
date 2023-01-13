@@ -21,6 +21,8 @@ defmodule Replay.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:circuits_uart, "~> 1.0", optional: true},
+      {:circuits_i2c, "~> 1.0", optional: true},
       {:resolve, "~> 0.1.0", optional: true},
       {:mimic, "~> 1.7", optional: true}
     ]
