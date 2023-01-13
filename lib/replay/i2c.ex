@@ -1,12 +1,15 @@
 defmodule Replay.I2C do
-  alias Replay.Common
+  @moduledoc false
 
+  import Replay.Common
+
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def build_mock(replay_id, opts \\ []) do
     devices =
       Keyword.get(
         opts,
         :devices,
-        Replay.Common.sequence(replay_id)
+        sequence(replay_id)
         |> devices_from_sequence()
       )
 
@@ -24,7 +27,7 @@ defmodule Replay.I2C do
       end
 
       def read(_, address, bytes_to_read, _opts \\ []) do
-        case Common.step(unquote(replay_id)) do
+        case step(unquote(replay_id)) do
           {:read, ^address, resp} when byte_size(resp) == bytes_to_read -> {:ok, resp}
           nil -> throw(sequence_complete({:read, address, bytes_to_read}))
           step -> throw(out_of_sequence({:read, address, bytes_to_read}, step))
@@ -37,7 +40,7 @@ defmodule Replay.I2C do
       end
 
       def write(_, address, data, _opts \\ []) do
-        case Common.step(unquote(replay_id)) do
+        case step(unquote(replay_id)) do
           {:write, ^address, ^data} -> :ok
           nil -> throw(sequence_complete({:write, address, data}))
           step -> throw(out_of_sequence({:write, address, data}, step))
@@ -49,7 +52,7 @@ defmodule Replay.I2C do
       end
 
       def write_read(_, address, write, bytes, _ \\ []) do
-        case Common.step(unquote(replay_id)) do
+        case step(unquote(replay_id)) do
           {:write_read, ^address, ^write, resp} when byte_size(resp) == bytes -> {:ok, resp}
           nil -> throw(sequence_complete({:write_read, address, write, bytes}))
           step -> throw(out_of_sequence({:write_read, address, write, bytes}, step))
@@ -59,14 +62,6 @@ defmodule Replay.I2C do
       def write_read!(i2c_bus, address, write_data, bytes_to_read, opts \\ []) do
         {:ok, resp} = write_read(i2c_bus, address, write_data, bytes_to_read, opts)
         resp
-      end
-
-      defp out_of_sequence(actual, expected) do
-        "[Out of Sequence] \n   - expected: #{inspect(expected, base: :hex)} \n   - got: #{inspect(actual, base: :hex)}"
-      end
-
-      defp sequence_complete(actual) do
-        "[Out of Sequence] Replay is complete but received #{inspect(actual, base: :hex)}"
       end
     end
   end

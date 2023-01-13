@@ -1,4 +1,6 @@
 defmodule Replay.Common do
+  @moduledoc false
+
   @type replay_id() :: integer()
 
   @spec create_table_if_needed() :: :ok
@@ -105,7 +107,7 @@ defmodule Replay.Common do
     else
       remaining = sequence |> Enum.drop(index)
 
-      remaining_str = remaining |> Enum.map(&"  - #{inspect(&1, base: :hex)}") |> Enum.join("\n")
+      remaining_str = remaining |> Enum.map_join("\n", &"  - #{inspect(&1, base: :hex)}")
 
       throw("[Sequence Incomplete] #{length(remaining)} steps remaining: \n#{remaining_str}")
     end
@@ -122,5 +124,13 @@ defmodule Replay.Common do
       :timer.sleep(10)
       await_complete(replay_id, timeout - 10)
     end
+  end
+
+  def out_of_sequence(actual, expected) do
+    "[Out of Sequence] \n   - expected: #{inspect(expected, base: :hex)} \n   - got: #{inspect(actual, base: :hex)}"
+  end
+
+  def sequence_complete(actual) do
+    "[Out of Sequence] Replay is complete but received #{inspect(actual, base: :hex)}"
   end
 end

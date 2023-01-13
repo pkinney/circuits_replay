@@ -1,4 +1,7 @@
 defmodule Replay do
+  @moduledoc """
+  TODO
+  """
   alias __MODULE__.Common
 
   def setup_uart(mock) do
