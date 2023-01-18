@@ -6,6 +6,8 @@ defmodule Replay.MixProject do
       app: :replay,
       version: "0.1.0",
       elixir: "~> 1.12",
+      description: description(),
+      package: package(),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
@@ -31,6 +33,24 @@ defmodule Replay.MixProject do
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.2", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.19", only: :dev}
+    ]
+  end
+
+  defp description do
+    """
+    Testing library for mocking Circuits libraries through a sequence of steps.
+    """
+  end
+
+  defp package do
+    [
+      files: ["lib", "mix.exs", "README*"],
+      maintainers: ["Powell Kinney"],
+      licenses: ["MIT"],
+      links: %{
+        "GitHub" => "https://github.com/pkinney/circuits_replay",
+        "Docs" => "https://hexdocs.pm/replay/Replay.html"
+      }
     ]
   end
 
