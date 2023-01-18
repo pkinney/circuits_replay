@@ -1,6 +1,6 @@
 # Replay for Circuits
 
-![Build Status](https://github.com/pkinney/replay/actions/workflows/ci.yaml/badge.svg)
+![Build Status](https://github.com/pkinney/circuits_replay/actions/workflows/ci.yaml/badge.svg)
 [![Hex.pm](https://img.shields.io/hexpm/v/replay.svg)](https://hex.pm/packages/replay)
 [![Documentation](https://img.shields.io/badge/documentation-gray)](https://hexdocs.pm/replay)
 
