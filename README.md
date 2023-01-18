@@ -1,8 +1,12 @@
 # Replay for Circuits
 
-A testing library that can mock each of the [Circuits]{https://elixir-circuits.github.io/) libraries (at least UART, I2C, and GPIO for now) to step through and assert a sequence of calls and messages.
+![Build Status](https://github.com/pkinney/replay/actions/workflows/ci.yaml/badge.svg)
+[![Hex.pm](https://img.shields.io/hexpm/v/replay.svg)](https://hex.pm/packages/replay)
+[![Documentation](https://img.shields.io/badge/documentation-gray)](https://hexdocs.pm/replay)
 
-(For now, this library is focused only on the basic communication functions of each of the libraries.  Items such as pullup/pulldown in Circuits.GPIO or device enumeration in Circuits.UART and Circuits.I2C are not implemented.)
+A testing library that can mock each of the [Circuits](https://elixir-circuits.github.io/) libraries (at least UART, I2C, and GPIO for now) to step through and assert a sequence of calls and messages.
+
+(For now, this library is focused only on the basic communication functions of each of the libraries.  Items such as pull-up/pull-down in Circuits.GPIO or device enumeration in Circuits.UART and Circuits.I2C are not implemented.)
 
 ## Installation
 
@@ -109,20 +113,20 @@ Replay.await_complete(replay, 50)
 
 The above will continuously check whether the sequence is complete and return `:ok` if the sequence completes within 50ms or will throw if it is not complete after 50ms has elapsed. 
 
-### UART
+### Circuits.UART
 
 Replays can be built with the following two steps:
 
-* **`{:write, binary}`** - expects a call to Circuits.UART.write(pid, binary) with the exact binary.
-* **`{:read, binary}`** - either 1) return the given binary in response to a call to Circuits.UART.read(pid) when the port is opened as `active: false` or 2) send a message to the parent process when the port is opened as `active: true` (or when `active` is not specified as this is the default).
+* **`{:write, binary}`** - expects a call to `Circuits.UART.write(pid, binary)` with the exact binary.
+* **`{:read, binary}`** - either 1) return the given binary in response to a call to `Circuits.UART.read(pid)` when the port is opened as `active: false` or 2) send a message to the parent process when the port is opened as `active: true` (or when `active` is not specified as this is the default).
 
 Currently, there is only a tenuous connection between the sequence and any particular Circuits.UART process/PID, so it's possible that different processes may step on each other if their execution overlaps.
 
-### I2C
+### Circuits.I2C
 
 Replays can contain the following steps:
 
-* **`{:write, address, binary}`** - expects a call to Circuits.I2C.write(pid, address, binary)`
+* **`{:write, address, binary}`** - expects a call to `Circuits.I2C.write(pid, address, binary)`
 * **`{:read, address, binary}`** - expects a call to `Circuits.I2C.read(pid, address, size)` and ensures that the value of `size` is the exact length of the `binary` in the step.  The contents of `binary` will be returned.
 * **`{:write_read, address, binary1, binary2}`** - expects a call to `Circuits.write_read(pid, address, binary1, size)` where the value of `size` is the exact length of `binary2`.
 
@@ -144,13 +148,30 @@ assert :ok = i2c().write!(pid, 0x49, "ACK")
 Replay.assert_complete(replay)
 ```
 
-### GPIO
+### Circuits.GPIO
 
-**TODO**
+The GPIO replay tracks multiple GPIO pin configuartions and can replay input, output, and interrupts across them.  Replay steps can be any of the following:
 
-### SPI
+* **`{:write, pin_number, value}`** - expects a call to `Circuits.GPIO.write(gpio, value)` where `gpio` is the reference for the pin number `pin_number`.
+* **`{:read, pin_number, value}`** - expects a call to `Circuits.GPIO.read(gpio)` where `gpio` is the reference for the pin number `pin_number`, to which it will return `value`.
+* **`{:interrupt, pin_number, value}`** - will send a message to the process registered for the interrupt on that pin. The message will match the message sent by Circuits.GPIO (`{:circuits_gpio, pin_number, timestamp, value}`).
 
-Not implemented yet
+```elixir
+Replay.replay_gpio([
+  {:write, 1, 1},
+  {:interrupt, 2, 1},
+  {:interrupt, 2, 0}
+])
+
+{:ok, pin1} = Circuits.GPIO.open(1, :output)
+{:ok, pin2} = Circuits.GPIO.open(2, :input)
+
+:ok = Circuits.GPIO.set_interrupts(pin2, :rising)
+
+:ok = Circuits.GPIO.write(pin1, 1)
+assert_received({:circuits_gpio, 2, _, 1})
+assert_received({:circuits_gpio, 2, _, 0})
+```
 
 ## Mocking Libraries
 
