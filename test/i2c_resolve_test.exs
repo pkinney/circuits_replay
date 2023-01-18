@@ -1,8 +1,10 @@
-defmodule Replay.I2CMimicTest do
+defmodule Replay.I2CResolveTest do
   use ExUnit.Case
 
+  defp i2c(), do: Resolve.resolve(Circuits.I2C)
+
   setup do
-    Replay.setup_i2c(:mimic)
+    Replay.setup_i2c(:resolve)
     :ok
   end
 
@@ -15,11 +17,11 @@ defmodule Replay.I2CMimicTest do
         {:write, 0x49, "ACK"}
       ])
 
-    {:ok, pid} = Circuits.I2C.open("i2c-1")
-    assert :ok = Circuits.I2C.write(pid, 0x47, "ABC")
-    assert {:ok, <<0xFF, 0xFF, 0xFE>>} = Circuits.I2C.read(pid, 0x47, 3)
-    assert {:ok, "123"} == Circuits.I2C.write_read(pid, 0x44, "XYZ0", 3)
-    assert :ok = Circuits.I2C.write!(pid, 0x49, "ACK")
+    {:ok, pid} = i2c().open("i2c-1")
+    assert :ok = i2c().write(pid, 0x47, "ABC")
+    assert {:ok, <<0xFF, 0xFF, 0xFE>>} = i2c().read(pid, 0x47, 3)
+    assert {:ok, "123"} == i2c().write_read(pid, 0x44, "XYZ0", 3)
+    assert :ok = i2c().write!(pid, 0x49, "ACK")
 
     Replay.assert_complete(replay)
   end
@@ -31,10 +33,10 @@ defmodule Replay.I2CMimicTest do
         {:read, 0x55, "A"}
       ])
 
-    {:ok, i2c} = Circuits.I2C.open("i2c-1")
-    Circuits.I2C.write(i2c, 0x47, <<0x01, 0x02>>)
+    {:ok, i2c} = i2c().open("i2c-1")
+    i2c().write(i2c, 0x47, <<0x01, 0x02>>)
 
-    assert catch_throw(Circuits.I2C.write(i2c, 0x44, "S0 T5"))
+    assert catch_throw(i2c().write(i2c, 0x44, "S0 T5"))
   end
 
   test "out of sequence read" do
@@ -45,11 +47,11 @@ defmodule Replay.I2CMimicTest do
         {:write, "A38"}
       ])
 
-    {:ok, i2c} = Circuits.I2C.open("i2c-1")
-    Circuits.I2C.write(i2c, 0x63, "S0")
-    Circuits.I2C.read(i2c, 0x10, 3)
+    {:ok, i2c} = i2c().open("i2c-1")
+    i2c().write(i2c, 0x63, "S0")
+    i2c().read(i2c, 0x10, 3)
 
-    assert catch_throw(Circuits.I2C.read(i2c, 0x10, 3))
+    assert catch_throw(i2c().read(i2c, 0x10, 3))
   end
 
   test "out of sequence write_read" do
@@ -59,11 +61,11 @@ defmodule Replay.I2CMimicTest do
       {:write_read, 0x10, "A8", 2}
     ])
 
-    {:ok, i2c} = Circuits.I2C.open("i2c-1")
-    Circuits.I2C.write(i2c, 0x63, "S0")
-    Circuits.I2C.read(i2c, 0x10, 3)
+    {:ok, i2c} = i2c().open("i2c-1")
+    i2c().write(i2c, 0x63, "S0")
+    i2c().read(i2c, 0x10, 3)
 
-    assert catch_throw(Circuits.I2C.read(i2c, 0x10, 3))
+    assert catch_throw(i2c().read(i2c, 0x10, 3))
   end
 
   test "write after complete" do
@@ -73,12 +75,12 @@ defmodule Replay.I2CMimicTest do
       {:write_read, 0x10, "A8", "00"}
     ])
 
-    {:ok, i2c} = Circuits.I2C.open("i2c-1")
-    Circuits.I2C.write(i2c, 0x63, "S0")
-    Circuits.I2C.read(i2c, 0x10, 3)
-    {:ok, "00"} = Circuits.I2C.write_read(i2c, 0x10, "A8", 2)
+    {:ok, i2c} = i2c().open("i2c-1")
+    i2c().write(i2c, 0x63, "S0")
+    i2c().read(i2c, 0x10, 3)
+    {:ok, "00"} = i2c().write_read(i2c, 0x10, "A8", 2)
 
-    assert catch_throw(Circuits.I2C.write(i2c, 0x10, "33"))
+    assert catch_throw(i2c().write(i2c, 0x10, "33"))
   end
 
   test "read after complete" do
@@ -88,12 +90,12 @@ defmodule Replay.I2CMimicTest do
       {:write_read, 0x10, "A8", "00"}
     ])
 
-    {:ok, i2c} = Circuits.I2C.open("i2c-1")
-    Circuits.I2C.write(i2c, 0x63, "S0")
-    Circuits.I2C.read(i2c, 0x10, 3)
-    {:ok, "00"} = Circuits.I2C.write_read(i2c, 0x10, "A8", 2)
+    {:ok, i2c} = i2c().open("i2c-1")
+    i2c().write(i2c, 0x63, "S0")
+    i2c().read(i2c, 0x10, 3)
+    {:ok, "00"} = i2c().write_read(i2c, 0x10, "A8", 2)
 
-    assert catch_throw(Circuits.I2C.write(i2c, 0x10, "33"))
+    assert catch_throw(i2c().write(i2c, 0x10, "33"))
   end
 
   test "write_read after complete" do
@@ -103,12 +105,12 @@ defmodule Replay.I2CMimicTest do
       {:write_read, 0x10, "A8", "00"}
     ])
 
-    {:ok, i2c} = Circuits.I2C.open("i2c-1")
-    Circuits.I2C.write(i2c, 0x63, "S0")
-    Circuits.I2C.read(i2c, 0x10, 3)
-    {:ok, "00"} = Circuits.I2C.write_read(i2c, 0x10, "A8", 2)
+    {:ok, i2c} = i2c().open("i2c-1")
+    i2c().write(i2c, 0x63, "S0")
+    i2c().read(i2c, 0x10, 3)
+    {:ok, "00"} = i2c().write_read(i2c, 0x10, "A8", 2)
 
-    assert catch_throw(Circuits.I2C.write_read(i2c, 0x10, "33", 2))
+    assert catch_throw(i2c().write_read(i2c, 0x10, "33", 2))
   end
 
   test "failed replay completion" do
@@ -119,8 +121,8 @@ defmodule Replay.I2CMimicTest do
         {:write_read, 0x10, "A8", "00"}
       ])
 
-    {:ok, i2c} = Circuits.I2C.open("i2c-1")
-    Circuits.I2C.write(i2c, 0x63, "S0")
+    {:ok, i2c} = i2c().open("i2c-1")
+    i2c().write(i2c, 0x63, "S0")
 
     assert catch_throw(Replay.assert_complete(replay))
   end
@@ -133,13 +135,13 @@ defmodule Replay.I2CMimicTest do
         {:write_read, 0x10, "A8", "00"}
       ])
 
-    {:ok, i2c} = Circuits.I2C.open("i2c-1")
-    Circuits.I2C.write(i2c, 0x63, "S0")
-    Circuits.I2C.read(i2c, 0x10, 3)
+    {:ok, i2c} = i2c().open("i2c-1")
+    i2c().write(i2c, 0x63, "S0")
+    i2c().read(i2c, 0x10, 3)
 
     Task.async(fn ->
       :timer.sleep(150)
-      {:ok, "00"} = Circuits.I2C.write_read(i2c, 0x10, "A8", 2)
+      {:ok, "00"} = i2c().write_read(i2c, 0x10, "A8", 2)
     end)
 
     Replay.await_complete(replay)
@@ -154,13 +156,13 @@ defmodule Replay.I2CMimicTest do
         {:write_read, 0x10, "A8", "00"}
       ])
 
-    {:ok, i2c} = Circuits.I2C.open("i2c-1")
-    Circuits.I2C.write(i2c, 0x63, "S0")
-    Circuits.I2C.read(i2c, 0x10, 3)
+    {:ok, i2c} = i2c().open("i2c-1")
+    i2c().write(i2c, 0x63, "S0")
+    i2c().read(i2c, 0x10, 3)
 
     Task.async(fn ->
       :timer.sleep(150)
-      {:ok, "00"} = Circuits.I2C.write_read(i2c, 0x10, "A8", 2)
+      {:ok, "00"} = i2c().write_read(i2c, 0x10, "A8", 2)
     end)
 
     assert catch_throw(Replay.await_complete(replay, 50))
