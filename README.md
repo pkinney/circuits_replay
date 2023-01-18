@@ -2,6 +2,7 @@
 
 A testing library that can mock each of the [Circuits]{https://elixir-circuits.github.io/) libraries (at least UART, I2C, and GPIO for now) to step through and assert a sequence of calls and messages.
 
+(For now, this library is focused only on the basic communication functions of each of the libraries.  Items such as pullup/pulldown in Circuits.GPIO or device enumeration in Circuits.UART and Circuits.I2C are not implemented.)
 
 ## Installation
 

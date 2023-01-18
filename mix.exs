@@ -25,6 +25,7 @@ defmodule Replay.MixProject do
     [
       {:circuits_uart, "~> 1.0", optional: true},
       {:circuits_i2c, "~> 1.0", optional: true},
+      {:circuits_gpio, "~> 1.0", optional: true},
       {:resolve, "~> 0.1.0", optional: true},
       {:mimic, "~> 1.7", optional: true},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},

@@ -3,7 +3,6 @@ defmodule Replay.I2CMimicTest do
 
   setup do
     Replay.setup_i2c(:mimic)
-    :ok
   end
 
   test "Successful sequence" do
