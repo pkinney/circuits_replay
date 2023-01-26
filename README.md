@@ -4,7 +4,9 @@
 [![Hex.pm](https://img.shields.io/hexpm/v/replay.svg)](https://hex.pm/packages/replay)
 [![Documentation](https://img.shields.io/badge/documentation-gray)](https://hexdocs.pm/replay)
 
-A testing library that can mock each of the [Circuits](https://elixir-circuits.github.io/) libraries (at least UART, I2C, and GPIO for now) to step through and assert a sequence of calls and messages.
+A testing library that can mock each of the [Circuits](https://elixir-circuits.github.io/) libraries (at least UART, I2C, and GPIO for now) to step through and assert a sequence of calls and messages. Like [ExVCR](https://github.com/parroty/exvcr) (or Ruby's [VCR](https://github.com/vcr/vcr)), but for hardware. 
+
+As an example, you can see it in use for mocking I2C and GPIO in [TMF882x](https://github.com/pkinney/tmf882x).
 
 (For now, this library is focused only on the basic communication functions of each of the libraries.  Items such as pull-up/pull-down in Circuits.GPIO or device enumeration in Circuits.UART and Circuits.I2C are not implemented.)
 
